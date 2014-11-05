@@ -83,11 +83,42 @@ site sponge [=
 
     SPLASH_LOGO = "images/sponge-logo-560x128.png"
 
+    color main_bgcolor = "#8f9faf"
+
     /-------- base page ---------------------------/
 
     page(*) base_page(params{}) [=
         boolean needs_login [?]    
         boolean needs_assent [?]
+        
+        style [| 
+            html, body { 
+                width: 100%;
+                height: 100%;
+                margin: 0 0 0 0;
+                background: [= main_bgcolor; =];
+            }
+
+            div {
+                background: [= main_bgcolor; =];
+            }
+            
+            #splash_image_holder {
+                width: 100%;
+            }
+            
+           #splash_image_holder img {
+                display: block;
+                margin-left: auto;
+                margin-right: auto;
+            }
+            
+            .gatekeeper {
+                width: 30em;
+                margin-left: auto;
+                margin-right: auto;
+            }
+        |]        
         
         component splash_image_holder(img_url) [=
             id = "splash_image_holder"
