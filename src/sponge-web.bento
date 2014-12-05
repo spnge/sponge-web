@@ -96,27 +96,28 @@ site sponge [=
                 width: 100%;
                 height: 100%;
                 margin: 0 0 0 0;
-                background: [= main_bgcolor; =];
+                background-image: url("images/seamless-sponge-texture.jpg");
+                background-color: [= main_bgcolor; =];
             }
 
-            div {
-                background: [= main_bgcolor; =];
+            .centered_container {
+                position: relative;
             }
             
-            #splash_image_holder {
-                width: 100%;
+            .centered_box {
+                position: absolute;
+                left: 50%;
+                top: 50%;
+                margin-right: -50%;
+                transform: translate(-50%, -50%);
             }
-            
-           #splash_image_holder img {
+
+            #splash_image_holder img {
                 display: block;
-                margin-left: auto;
-                margin-right: auto;
             }
             
             .gatekeeper {
                 width: 30em;
-                margin-left: auto;
-                margin-right: auto;
             }
         |]        
         
@@ -125,14 +126,26 @@ site sponge [=
             [| <img src="[= img_url; =]"> |]
         =]
         
+        dynamic component login_splash_box [=
+            id = "login_splash_box"
+            component_class = "centered_box"
+            splash_image_holder(SPLASH_LOGO);
+            login_component(this_page);
+        =]
+        
+        dynamic component assent_splash_box [=
+            id = "assent_splash_box"
+            component_class = "centered_box"
+            assent_component(this_page);
+        =]
+        
         base_page this_page = owner    
         
         if (needs_login && !logged_in) [=
-            splash_image_holder(SPLASH_LOGO);
-            login_component(this_page);
+            login_splash_box;
 
         =] else if (needs_assent && !assented) [=
-            assent_component(this_page);
+            assent_splash_box;
             
         =] else [=
             sub;
