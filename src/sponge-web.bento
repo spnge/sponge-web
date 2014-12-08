@@ -77,17 +77,33 @@ site sponge [=
         /-- TODO: log assent --/    
     =]
 
-
+    /-------- parameter constants ----------------/
+    
+    USERNAME_PARAM = "user"
+    PASSWORD_PARAM = "pass"
+    ASSENT_PARAM = "assent"
 
     /-------- styles and appearance constants -----/
 
-    SPLASH_LOGO = "images/sponge-logo-560x128.png"
+    SPLASH_LOGO = "images/sponge-logo-512x96.png"
 
     color main_bgcolor = "#8f9faf"
+
+    /-------- information for user ----------------/
+    
+    ASSENT_TEXT = "This site contains confidential and proprietary information belonging to Sponge " +
+                  "Data.  Sponge Data does not authorize the use or disclosure of this information " +
+                  "without the permission of Sponge Data.  To continue to the site, please acknowledge " +
+                  "that you understand these restrictions by clicking on the I Understand button."
+    
+    REFUSED_TEXT = "Please visit us after our public release!"
+
 
     /-------- base page ---------------------------/
 
     page(*) base_page(params{}) [=
+        boolean ajax_enabled = true
+    
         boolean needs_login [?]    
         boolean needs_assent [?]
         
@@ -96,11 +112,13 @@ site sponge [=
                 width: 100%;
                 height: 100%;
                 margin: 0 0 0 0;
-                background-image: url("images/seamless-sponge-texture.jpg");
                 background-color: [= main_bgcolor; =];
             }
 
             .centered_container {
+                width: 100%;
+                height: 100%;
+                margin: 0 0 0 0;
                 position: relative;
             }
             
@@ -111,9 +129,41 @@ site sponge [=
                 margin-right: -50%;
                 transform: translate(-50%, -50%);
             }
+            
+            .centered_div  {
+                width: 100%;
+            }
+            
+            .centered_div table {
+                padding: 0.75em;
+                margin-left: auto;
+                margin-right: auto;
+            }
+            
+            .labeled_edit {
+                text-align: center;
+                font-weight: bold;
+                padding:0.5em;
+            }
 
             #splash_image_holder img {
                 display: block;
+            }
+            
+            #login_splash_box {
+                color: white;
+                font-size: 1em;
+                font-weight: bold;
+                font-family: "Arial", sans-serif;
+                background-image: url("images/seamless-sponge-400x300.png");
+                background-repeat: repeat;
+            }
+            
+            #assent_splash_box {
+                color: white;
+                font-size: 1em;
+                font-weight: bold;
+                font-family: "Arial", sans-serif;
             }
             
             .gatekeeper {
@@ -128,26 +178,36 @@ site sponge [=
         
         dynamic component login_splash_box [=
             id = "login_splash_box"
-            component_class = "centered_box"
+            component_class = "centered_container"
+            
+            [| <div class="centered_box"> |]
             splash_image_holder(SPLASH_LOGO);
             login_component(this_page);
+            [| </div> |]
         =]
         
         dynamic component assent_splash_box [=
             id = "assent_splash_box"
-            component_class = "centered_box"
+            component_class = "centered_container"
+            
+            [| <div class="centered_box"> |]
+            splash_image_holder(SPLASH_LOGO);
             assent_component(this_page);
+            [| </div> |]
         =]
         
         base_page this_page = owner    
         
         if (needs_login && !logged_in) [=
+            log("needs login");
             login_splash_box;
 
         =] else if (needs_assent && !assented) [=
+            log("needs assent");
             assent_splash_box;
             
         =] else [=
+            log("we're good");
             sub;
         =]    
     
@@ -162,25 +222,55 @@ site sponge [=
     gatekeeper_component(*) login_component(base_page goto),(params{}) [=
         base_page goto_page = goto ? goto : params{"goto"}
         component this_component = owner
-        field_ids[] = [ "username", "pass" ]
+        field_ids[] = [ USERNAME_PARAM, PASSWORD_PARAM ]
     
-        if (params{"username"}) [=
-            eval(logged_in(: authenticate(params{"username"}, params{"pass"}) :)); 
+        if (params{USERNAME_PARAM}) [=
+            log("trying to authenticate " + params{USERNAME_PARAM});
+            eval(logged_in(: authenticate(params{USERNAME_PARAM}, params{PASSWORD_PARAM}) :)); 
         =]
         if (logged_in) [=
             redirect goto_page
         =] else [=
-            [| <div>Username: |]
-            textedit("username", this_username, 20);
-            [| </div><div>Password: |]
-            passwordedit("pass", "", 20);
-            [| </div><div> |]
-            submit_button("Login", "login", this_component, field_ids);
-            [| </div> |]
+            [| <div class="centered_div"><table><tr> |]
+            if (params{USERNAME_PARAM}) [|
+                <td colspan="2" style="background-color: white; color: red; text-align: center;">Login unsuccessful.  Try again.</td>
+            |] else [|
+                <td colospan="2">&nbsp;</td>
+            |]
+            [| </tr><tr><td><table><tr><td>Username:</td><td> |]
+            textedit(USERNAME_PARAM, this_username, 20);
+            [| </td></tr><tr><td>Password:</td><td> |]
+            passwordedit(PASSWORD_PARAM, "", 20);
+            [| </td></tr></table> |]
+            [| </td><td> |]
+            submit_button("Login", "login", "/" + this_component.id, field_ids);
+            [| </td></tr></table></div> |]
         =]
     =]    
 
     gatekeeper_component(*) assent_component(base_page goto_page),(params{}) [=
+        component this_component = owner
+
+        if (params{ASSENT_PARAM} == "false") [=
+            [| <div class="centered_div"> |]
+            REFUSED_TEXT;
+            [| </div> |]
+        =] else [=              
+            if (params{ASSENT_PARAM} == "true") [=
+                eval(assented(: true :)); 
+            =]
+            
+            if (assented) [=
+                redirect goto_page
+            =] else [=
+                [| <div class="centered_div"><div> |]
+                ASSENT_TEXT;
+                [| </div><div> |]
+                request_button("ok", "I Understand", "/" + this_component.id, ASSENT_PARAM, "true");
+                request_button("cancel", "Cancel", "/" + this_component.id, ASSENT_PARAM, "false");
+                [| </div></div> |]
+            =]
+        =]
     =]    
 
 
@@ -191,5 +281,15 @@ site sponge [=
         boolean needs_assent = true    
     
     =]
+
+    /-------- error page --------------------------/
+    page error_page(request r) [=
+        boolean needs_login = false    
+        boolean needs_assent = false    
+        title = [| Error |]
+        color bgcolor = "#AAEEDD"
+
+        error_div(r);        
+    =]    
 
 =]
