@@ -182,7 +182,7 @@ site sponge [=
             
             [| <div class="centered_box"> |]
             splash_image_holder(SPLASH_LOGO);
-            login_component(this_page);
+            login_component(page_name);
             [| </div> |]
         =]
         
@@ -192,11 +192,12 @@ site sponge [=
             
             [| <div class="centered_box"> |]
             splash_image_holder(SPLASH_LOGO);
-            assent_component(this_page);
+            assent_component(page_name);
             [| </div> |]
         =]
         
-        base_page this_page = owner    
+        base_page this_page = owner
+        page_name = owner.type
         
         if (needs_login && !logged_in) [=
             log("needs login");
@@ -215,22 +216,30 @@ site sponge [=
 
     /-------- login mechanics ---------------------/
 
-    component gatekeeper_component(base_page goto_page),(params{}) [=
+    component gatekeeper_component [=
         component_class = "gatekeeper"
     =]
 
-    gatekeeper_component(*) login_component(base_page goto),(params{}) [=
-        base_page goto_page = goto ? goto : params{"goto"}
+    dynamic gatekeeper_component login_component(params{}),(page_name) [=
+        goto_page = page_name ? page_name : goto_param
+        goto_param [= with (params) [= params{"goto"}; =] else [| index |] =]
         component this_component = owner
         field_ids[] = [ USERNAME_PARAM, PASSWORD_PARAM ]
-    
+        submit_params{} = { "goto": goto_page } 
+        
+        
+        log(" login component params: " + params);
+        log(" login submit params: " + submit_params);
+        
         if (params{USERNAME_PARAM}) [=
             log("trying to authenticate " + params{USERNAME_PARAM});
             eval(logged_in(: authenticate(params{USERNAME_PARAM}, params{PASSWORD_PARAM}) :)); 
         =]
         if (logged_in) [=
-            redirect goto_page
+            log("logged in, redirecting to " + goto_page);
+            redirect this_context.construct(goto_page)
         =] else [=
+       
             [| <div class="centered_div"><table><tr> |]
             if (params{USERNAME_PARAM}) [|
                 <td colspan="2" style="background-color: white; color: red; text-align: center;">Login unsuccessful.  Try again.</td>
@@ -243,12 +252,14 @@ site sponge [=
             passwordedit(PASSWORD_PARAM, "", 20);
             [| </td></tr></table> |]
             [| </td><td> |]
-            submit_button("Login", "login", "/" + this_component.id, field_ids);
+            submit_button("Login", "login", "/" + this_component.id, field_ids, submit_params);
             [| </td></tr></table></div> |]
         =]
+        
     =]    
 
-    gatekeeper_component(*) assent_component(base_page goto_page),(params{}) [=
+    dynamic gatekeeper_component(*) assent_component(page_name),(params{}) [=
+        goto_page = page_name ? page_name : params{"goto"}
         component this_component = owner
 
         if (params{ASSENT_PARAM} == "false") [=
