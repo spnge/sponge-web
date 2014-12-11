@@ -237,7 +237,7 @@ site sponge [=
         =]
         if (logged_in) [=
             log("logged in, redirecting to " + goto_page);
-            redirect this_context.construct(goto_page)
+            redirect this_domain.get_definition(goto_page)
         =] else [=
        
             [| <div class="centered_div"><table><tr> |]
