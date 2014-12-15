@@ -87,7 +87,7 @@ site sponge [=
 
     SPLASH_LOGO = "images/sponge-logo-512x96.png"
 
-    color main_bgcolor = "#8f9faf"
+    color main_bgcolor = "#9fdfef"
 
     /-------- information for user ----------------/
     
@@ -122,25 +122,34 @@ site sponge [=
                 position: relative;
             }
             
-            .centered_box {
+            .centered_high_box {
                 position: absolute;
                 left: 50%;
-                top: 50%;
+                top: 38%;
                 margin-right: -50%;
                 transform: translate(-50%, -50%);
+                width: 36em;
             }
             
             .centered_div  {
                 width: 100%;
-            }
+                text-align: center;
+             }
             
             .centered_div table {
-                padding: 0.75em;
                 margin-left: auto;
                 margin-right: auto;
             }
+
+            .centered_div td {
+                padding: 0.125em 0.5em;
+            }
             
-            .labeled_edit {
+            .centered_div div {
+                padding: 0.75em 4em;
+            }
+            
+           .labeled_edit {
                 text-align: center;
                 font-weight: bold;
                 padding:0.5em;
@@ -148,6 +157,8 @@ site sponge [=
 
             #splash_image_holder img {
                 display: block;
+                margin-left: auto;
+                margin-right: auto;
             }
             
             #login_splash_box {
@@ -159,15 +170,27 @@ site sponge [=
                 background-repeat: repeat;
             }
             
+            #login_button {
+                width: 10em;
+            }
+            
+            #ok_button {
+                width: 10em;
+            }
+
+            #cancel_button {
+                width: 10em;
+            }
+
             #assent_splash_box {
-                color: white;
+                color: black;
                 font-size: 1em;
                 font-weight: bold;
                 font-family: "Arial", sans-serif;
+                padding: 2em;
             }
             
             .gatekeeper {
-                width: 30em;
             }
         |]        
         
@@ -180,7 +203,7 @@ site sponge [=
             id = "login_splash_box"
             component_class = "centered_container"
             
-            [| <div class="centered_box"> |]
+            [| <div class="centered_high_box"> |]
             splash_image_holder(SPLASH_LOGO);
             login_component(page_name);
             [| </div> |]
@@ -190,7 +213,7 @@ site sponge [=
             id = "assent_splash_box"
             component_class = "centered_container"
             
-            [| <div class="centered_box"> |]
+            [| <div class="centered_high_box"> |]
             splash_image_holder(SPLASH_LOGO);
             assent_component(page_name);
             [| </div> |]
@@ -237,9 +260,9 @@ site sponge [=
         =]
         if (logged_in) [=
             log("logged in, redirecting to " + goto_page);
-            redirect this_domain.get_definition(goto_page)
+            redirect [[ goto_page ]]
+
         =] else [=
-       
             [| <div class="centered_div"><table><tr> |]
             if (params{USERNAME_PARAM}) [|
                 <td colspan="2" style="background-color: white; color: red; text-align: center;">Login unsuccessful.  Try again.</td>
@@ -252,16 +275,17 @@ site sponge [=
             passwordedit(PASSWORD_PARAM, "", 20);
             [| </td></tr></table> |]
             [| </td><td> |]
-            submit_button("Login", "login", "/" + this_component.id, field_ids, submit_params);
+            submit_button("login", "Login", "/" + this_component.id, field_ids, submit_params);
             [| </td></tr></table></div> |]
         =]
         
     =]    
 
-    dynamic gatekeeper_component(*) assent_component(page_name),(params{}) [=
+    dynamic gatekeeper_component assent_component(page_name),(params{}) [=
         goto_page = page_name ? page_name : params{"goto"}
         component this_component = owner
 
+        log("assent_component params: " + params);
         if (params{ASSENT_PARAM} == "false") [=
             [| <div class="centered_div"> |]
             REFUSED_TEXT;
@@ -272,12 +296,13 @@ site sponge [=
             =]
             
             if (assented) [=
-                redirect goto_page
+                redirect [[ goto_page ]]
             =] else [=
                 [| <div class="centered_div"><div> |]
                 ASSENT_TEXT;
                 [| </div><div> |]
                 request_button("ok", "I Understand", "/" + this_component.id, ASSENT_PARAM, "true");
+                [| &nbsp; |]
                 request_button("cancel", "Cancel", "/" + this_component.id, ASSENT_PARAM, "false");
                 [| </div></div> |]
             =]
